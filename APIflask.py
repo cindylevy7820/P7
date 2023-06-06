@@ -47,10 +47,10 @@ def main() :
     @st.cache
     def load_data():
         z = ZipFile("data/default_risk.zip")
-        data = pd.read_csv(z.open('default_risk.csv'), index_col='SK_ID_CURR', encoding ='utf-8')
+        data = pd.read_csv('data/default_risk.csv', index_col='SK_ID_CURR', encoding ='utf-8')
 
         z = ZipFile("data/X_sample.zip")
-        sample = pd.read_csv(z.open('X_sample.csv'), index_col='SK_ID_CURR', encoding ='utf-8')
+        sample = pd.read_csv('data/X_sample.csv', index_col='SK_ID_CURR', encoding ='utf-8')
         
         description = pd.read_csv("data/features_description.csv", 
                                   usecols=['Row', 'Description'], index_col=0, encoding= 'unicode_escape')
