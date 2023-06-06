@@ -49,14 +49,10 @@ def main() :
         data = pd.read_csv('data/default_risk.csv', index_col='SK_ID_CURR', encoding ='utf-8')
         
         sample = pd.read_csv('data/X_sample.csv', index_col='SK_ID_CURR', encoding ='utf-8')
-        
-        description = pd.read_csv("data/features_description.csv", 
-                                  usecols=['Row', 'Description'], index_col=0, encoding= 'unicode_escape')
-
+       
         target = data.iloc[:, -1:]
 
-        return data, sample, target, description
-
+        return data, sample, target
 
     def load_model():
         '''loading the trained model'''
@@ -124,7 +120,7 @@ def main() :
 
 
     #Loading data……
-    data, sample, target, description = load_data()
+    data, sample, target = load_data()
     id_client = sample.index.values
     clf = load_model()
 
@@ -266,11 +262,6 @@ def main() :
         shap_values = explainer.shap_values(X)
         shap.summary_plot(shap_values[0], X, plot_type ="bar", max_display=number, color_bar=False, plot_size=(5, 5))
         st.pyplot(fig)
-        
-        if st.checkbox("Need help about feature description ?") :
-            list_features = description.index.to_list()
-            feature = st.selectbox('Feature checklist…', list_features)
-            st.table(description.loc[description.index == feature][:1])
         
     else:
         st.markdown("<i>…</i>", unsafe_allow_html=True)
