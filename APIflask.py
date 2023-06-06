@@ -24,5 +24,5 @@ def predict():
     return jsonify(response)
 
 if __name__ == '__main__':
-    app.run(debug==true)
+    app.run(port="https://cindylevy7820-p7-apiflask-lqwnnz.streamlit.app/")
 
