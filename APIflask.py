@@ -20,7 +20,7 @@ def predict():
     
     # Préparer la réponse
     response = {'predictions': predictions.tolist()}
-    
+    st.write(jsonify(response))
     return jsonify(response)
 
 if __name__ == '__main__':
