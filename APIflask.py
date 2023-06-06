@@ -23,7 +23,7 @@ def predict():
     
     return jsonify(response)
 
-st.write(predict())
+print(predict())
 
 if __name__ == '__main__':
     app.run(port=5001)
