@@ -108,5 +108,12 @@ def main():
     indicator_choice = st.selectbox('Sélectionnez un indicateur', ['AMT_INCOME_TOTAL', 'DAYS_BIRTH', 'CNT_CHILDREN'])
     plot_indicator_comparison(data, client_choice, indicator_choice)
     
+    fig, ax = plt.subplots()
+    sns.boxplot(data=data, x='CNT_CHILDREN', y='AMT_INCOME_TOTAL')
+    ax.set_xlabel('Nombre d\'enfants')
+    ax.set_ylabel('Revenu')
+    ax.set_title('Revenu en fonction du nombre d\'enfants')
+    st.pyplot(fig)
+    
 if __name__ == '__main__':
     main()
