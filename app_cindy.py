@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
 import seaborn as sns
 import json
-import shap
 
 def plot_indicator_comparison(data, client_choice, indicator):
     # Obtenir l'indicateur pour le client sélectionné
@@ -111,17 +110,5 @@ def main():
     indicator_choice = st.selectbox('Sélectionnez un indicateur', ['AMT_INCOME_TOTAL', 'DAYS_BIRTH', 'CNT_CHILDREN'])
     plot_indicator_comparison(data, client_choice, indicator_choice)
     
-    # Features Importances
-    st.subheader("Features Importances du client")
-    shap.initjs()
-    X = sample.iloc[:, :-1]
-    X = X[X.index == client_choice]
-    number = st.slider("Chosir un nombre de features à afficher : ", 0, 20, 5)
-    fig, ax = plt.subplots(figsize=(10, 10))
-    explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X)
-    shap.summary_plot(shap_values[0], X, plot_type ="bar", max_display=number, color_bar=False, plot_size=(5, 5))
-    st.pyplot(fig)
-
 if __name__ == '__main__':
     main()
