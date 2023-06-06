@@ -108,12 +108,17 @@ def main():
     indicator_choice = st.selectbox('Sélectionnez un indicateur', ['AMT_INCOME_TOTAL', 'DAYS_BIRTH', 'CNT_CHILDREN'])
     plot_indicator_comparison(data, client_choice, indicator_choice)
     
+    # Analyse bi-dimmentionnel
+    st.subheader("Analyse bi-dimmentionnel")
+    data_AMT_INCOME_TOTAL = data["AMT_INCOME_TOTAL"]
     fig, ax = plt.subplots()
-    sns.boxplot(data=data, x='CNT_CHILDREN', y='AMT_INCOME_TOTAL')
-    ax.set_xlabel('Nombre d\'enfants')
-    ax.set_ylabel('Revenu')
-    ax.set_title('Revenu en fonction du nombre d\'enfants')
+    sns.histplot(data_AMT_INCOME_TOTAL, bins=100)
+    ax.axvline(client_info["AMT_INCOME_TOTAL"], color="green", linestyle='--')
+    ax.set(title='Revenu', xlabel='Revenu', ylabel='Nombre')
     st.pyplot(fig)
+    st.subheader('Comparaison de l\'indicateur')
+    indicator_choice = st.selectbox('Sélectionnez un indicateur', ['AMT_INCOME_TOTAL', 'DAYS_BIRTH', 'CNT_CHILDREN'])
+    plot_indicator_comparison(data, client_choice, indicator_choice)
     
 if __name__ == '__main__':
     main()
