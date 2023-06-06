@@ -54,7 +54,7 @@ def interpret_score(score):
 def load_predictions_API(sample, id, clf):
     X = sample.iloc[:, :-1]
     data = X[X.index == int(id)].to_dict(orient='records')
-    response = requests.post('https://share.streamlit.io/cindylevy7820/P7/main/predict', json=data)
+    response = requests.post('https://share.streamlit.io/cindylevy7820/P7/main/APIflask.py/predict', json=data)
     st.write(response.text)
     predictions = response.json()['predictions']
     return predictions[0]
