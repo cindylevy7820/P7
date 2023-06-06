@@ -23,8 +23,6 @@ def predict():
     
     return jsonify(response)
 
-print(predict())
-
 if __name__ == '__main__':
     app.run()
 
