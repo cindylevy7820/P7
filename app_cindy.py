@@ -52,13 +52,10 @@ def interpret_score(score):
     return f"<span style='color:{color}'>{message}</span>"
 
 def load_predictions_API(sample, id, clf):
-    X = sample.iloc[:, :-1]
-    data = X[X.index == int(id)].to_dict(orient='records')
-    response = requests.post("https://cindylevy7820-p7-apiflask-lqwnnz.streamlit.app/predict", json=data)
-    st.write(response.text)
-    predictions = response.json()['predictions']
-    return predictions[0]
-
+    X=sample.iloc[:, :-1]
+    score = clf.predict_proba(X[X.index == int(id)])[:,1]
+    return score
+    
 ###### CODE PRINCIPALE
 def main():
     
