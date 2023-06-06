@@ -28,251 +28,115 @@ if __name__ == '__main__':
     app.run()
 """
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
+import requests
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import seaborn as sns
-import pickle
-import shap
-import plotly.express as px
-from zipfile import ZipFile
-from sklearn.cluster import KMeans
-plt.style.use('fivethirtyeight')
-#sns.set_style('darkgrid')
+import json
 
+def plot_indicator_comparison(data, client_choice, indicator):
+    # Obtenir l'indicateur pour le client sélectionné
+    client_indicator = data.loc[client_choice, indicator]
 
-def main() :
+    # Calculer la moyenne de l'indicateur pour les autres clients en cours
+    other_clients_mean = np.mean(data[data.index != client_choice][indicator])
 
-    def load_data():
-        data = pd.read_csv('data/default_risk.csv', index_col='SK_ID_CURR', encoding ='utf-8')
-        
-        sample = pd.read_csv('data/X_sample.csv', index_col='SK_ID_CURR', encoding ='utf-8')
-       
-        target = data.iloc[:, -1:]
+    # Créer le graphique à barres comparatif
+    fig, ax = plt.subplots()
+    ax.bar(['Client sélectionné', 'Moyenne des autres clients'], [client_indicator, other_clients_mean])
+    ax.set_ylabel(indicator)
+    ax.set_title('Comparaison de l\'indicateur')
+    st.pyplot(fig)
 
-        return data, sample, target
+###### LES FONCTIONS
+@st.cache_data
+def datas():
+    data = pd.read_csv('data/default_risk.csv', index_col='SK_ID_CURR', encoding ='utf-8')
+    sample = pd.read_csv('data/X_sample.csv', index_col='SK_ID_CURR', encoding ='utf-8')
+    return data, sample
 
-    def load_model():
-        '''loading the trained model'''
-        pickle_in = open('model/model.pkl', 'rb') 
-        clf = pickle.load(pickle_in)
-        return clf
+data, sample = datas()
 
-    def load_knn(sample):
-        knn = knn_training(sample)
-        return knn
+def models():
+    pickle_in = open('model/model.pkl', 'rb') 
+    prediction = pickle.load(pickle_in)
+    return prediction
 
-    def load_infos_gen(data):
-        lst_infos = [data.shape[0],
-                     round(data["AMT_INCOME_TOTAL"].mean(), 2),
-                     round(data["AMT_CREDIT"].mean(), 2)]
+model = models()
 
-        nb_credits = lst_infos[0]
-        rev_moy = lst_infos[1]
-        credits_moy = lst_infos[2]
-
-        targets = data.TARGET.value_counts()
-
-        return nb_credits, rev_moy, credits_moy, targets
-
-
-    def identite_client(data, id):
-        data_client = data[data.index == int(id)]
-        return data_client
-
-    def load_age_population(data):
-        data_age = round((data["DAYS_BIRTH"]/365), 2)
-        return data_age
-
-    def load_income_population(sample):
-        df_income = pd.DataFrame(sample["AMT_INCOME_TOTAL"])
-        df_income = df_income.loc[df_income['AMT_INCOME_TOTAL'] < 200000, :]
-        return df_income
-
-    def load_prediction(sample, id, clf):
-        X=sample.iloc[:, :-1]
-        score = clf.predict_proba(X[X.index == int(id)])[:,1]
-        return score
-
-    def load_kmeans(sample, id, mdl):
-        index = sample[sample.index == int(id)].index.values
-        index = index[0]
-        data_client = pd.DataFrame(sample.loc[sample.index, :])
-        df_neighbors = pd.DataFrame(knn.fit_predict(data_client), index=data_client.index)
-        df_neighbors = pd.concat([df_neighbors, data], axis=1)
-        return df_neighbors.iloc[:,1:].sample(10)
-
-    def knn_training(sample):
-        knn = KMeans(n_clusters=2).fit(sample)
-        return knn 
-
-
-
-    #Loading data……
-    data, sample, target = load_data()
-    id_client = sample.index.values
-    clf = load_model()
-
-
-    #######################################
-    # SIDEBAR
-    #######################################
-
-    #Title display
-    html_temp = """
-    <div style="background-color: tomato; padding:10px; border-radius:10px">
-    <h1 style="color: white; text-align:center">Dashboard Scoring Credit</h1>
-    </div>
-    <p style="font-size: 20px; font-weight: bold; text-align:center">Credit decision support…</p>
-    """
-    st.markdown(html_temp, unsafe_allow_html=True)
-
-    #Customer ID selection
-    st.sidebar.header("**General Info**")
-
-    #Loading selectbox
-    chk_id = st.sidebar.selectbox("Client ID", id_client)
-
-    #Loading general info
-    nb_credits, rev_moy, credits_moy, targets = load_infos_gen(data)
-
-
-    ### Display of information in the sidebar ###
-    #Number of loans in the sample
-    st.sidebar.markdown("<u>Number of loans in the sample :</u>", unsafe_allow_html=True)
-    st.sidebar.text(nb_credits)
-
-    #Average income
-    st.sidebar.markdown("<u>Average income (USD) :</u>", unsafe_allow_html=True)
-    st.sidebar.text(rev_moy)
-
-    #AMT CREDIT
-    st.sidebar.markdown("<u>Average loan amount (USD) :</u>", unsafe_allow_html=True)
-    st.sidebar.text(credits_moy)
-    
-    #PieChart
-    #st.sidebar.markdown("<u>......</u>", unsafe_allow_html=True)
-    fig, ax = plt.subplots(figsize=(5,5))
-    plt.pie(targets, explode=[0, 0.1], labels=['No default', 'Default'], autopct='%1.1f%%', startangle=90)
-    st.sidebar.pyplot(fig)
-        
-
-    #######################################
-    # HOME PAGE - MAIN CONTENT
-    #######################################
-    #Display Customer ID from Sidebar
-    st.write("Customer ID selection :", chk_id)
-
-
-    #Customer information display : Customer Gender, Age, Family status, Children, …
-    st.header("**Customer information display**")
-
-    if st.checkbox("Show customer information ?"):
-
-        infos_client = identite_client(data, chk_id)
-        st.write("**Gender : **", infos_client["CODE_GENDER"].values[0])
-        st.write("**Age : **{:.0f} ans".format(int(infos_client["DAYS_BIRTH"]/365)))
-        st.write("**Family status : **", infos_client["NAME_FAMILY_STATUS"].values[0])
-        st.write("**Number of children : **{:.0f}".format(infos_client["CNT_CHILDREN"].values[0]))
-
-        #Age distribution plot
-        data_age = load_age_population(data)
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.histplot(data_age, edgecolor = 'k', color="goldenrod", bins=20)
-        ax.axvline(int(infos_client["DAYS_BIRTH"].values / 365), color="green", linestyle='--')
-        ax.set(title='Customer age', xlabel='Age(Year)', ylabel='')
-        st.pyplot(fig)
-    
-        
-        st.subheader("*Income (USD)*")
-        st.write("**Income total : **{:.0f}".format(infos_client["AMT_INCOME_TOTAL"].values[0]))
-        st.write("**Credit amount : **{:.0f}".format(infos_client["AMT_CREDIT"].values[0]))
-        st.write("**Credit annuities : **{:.0f}".format(infos_client["AMT_ANNUITY"].values[0]))
-        st.write("**Amount of property for credit : **{:.0f}".format(infos_client["AMT_GOODS_PRICE"].values[0]))
-        
-        #Income distribution plot
-        data_income = load_income_population(data)
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.histplot(data_income["AMT_INCOME_TOTAL"], edgecolor = 'k', color="goldenrod", bins=10)
-        ax.axvline(int(infos_client["AMT_INCOME_TOTAL"].values[0]), color="green", linestyle='--')
-        ax.set(title='Customer income', xlabel='Income (USD)', ylabel='')
-        st.pyplot(fig)
-        
-        #Relationship Age / Income Total interactive plot 
-        data_sk = data.reset_index(drop=False)
-        data_sk.DAYS_BIRTH = (data_sk['DAYS_BIRTH']/365).round(1)
-        fig, ax = plt.subplots(figsize=(10, 10))
-        fig = px.scatter(data_sk, x='DAYS_BIRTH', y="AMT_INCOME_TOTAL", 
-                         size="AMT_INCOME_TOTAL", color='CODE_GENDER',
-                         hover_data=['NAME_FAMILY_STATUS', 'CNT_CHILDREN', 'NAME_CONTRACT_TYPE', 'SK_ID_CURR'])
-
-        fig.update_layout({'plot_bgcolor':'#f0f0f0'}, 
-                          title={'text':"Relationship Age / Income Total", 'x':0.5, 'xanchor': 'center'}, 
-                          title_font=dict(size=20, family='Verdana'), legend=dict(y=1.1, orientation='h'))
-
-
-        fig.update_traces(marker=dict(line=dict(width=0.5, color='#3a352a')), selector=dict(mode='markers'))
-        fig.update_xaxes(showline=True, linewidth=2, linecolor='#f0f0f0', gridcolor='#cbcbcb',
-                         title="Age", title_font=dict(size=18, family='Verdana'))
-        fig.update_yaxes(showline=True, linewidth=2, linecolor='#f0f0f0', gridcolor='#cbcbcb',
-                         title="Income Total", title_font=dict(size=18, family='Verdana'))
-
-        st.plotly_chart(fig)
-    
+def interpret_score(score):
+    if score >= 0.7:
+        color = "red"
+        message = "Le client présente un risque élevé de faillite."
+    elif score >= 0.4:
+        color = "orange"
+        message = "Le client présente un risque modéré de faillite."
     else:
-        st.markdown("<i>…</i>", unsafe_allow_html=True)
-
-    #Customer solvability display
-    st.header("**Customer file analysis**")
-    prediction = load_prediction(sample, chk_id, clf)
-    st.write("**Default probability : **{:.0f} %".format(round(float(prediction)*100, 2)))
-
-    #Compute decision according to the best threshold
-    #if prediction <= xx :
-    #    decision = "<font color='green'>**LOAN GRANTED**</font>" 
-    #else:
-    #    decision = "<font color='red'>**LOAN REJECTED**</font>"
-
-    #st.write("**Decision** *(with threshold xx%)* **: **", decision, unsafe_allow_html=True)
-
-    st.markdown("<u>Customer Data :</u>", unsafe_allow_html=True)
-    st.write(identite_client(data, chk_id))
-
+        color = "green"
+        message = "Le client présente un faible risque de faillite."
     
-    #Feature importance / description
-    if st.checkbox("Customer ID {:.0f} feature importance ?".format(chk_id)):
-        shap.initjs()
-        X = sample.iloc[:, :-1]
-        X = X[X.index == chk_id]
-        number = st.slider("Pick a number of features…", 0, 20, 5)
+    return f"<span style='color:{color}'>{message}</span>"
 
-        fig, ax = plt.subplots(figsize=(10, 10))
-        explainer = shap.TreeExplainer(load_model())
-        shap_values = explainer.shap_values(X)
-        shap.summary_plot(shap_values[0], X, plot_type ="bar", max_display=number, color_bar=False, plot_size=(5, 5))
-        st.pyplot(fig)
-        
-    else:
-        st.markdown("<i>…</i>", unsafe_allow_html=True)
-            
+def load_predictions_API(sample, id, clf):
+    X=sample.iloc[:, :-1]
+    score = clf.predict_proba(X[X.index == int(id)])[:,1]
+    return score
+
+###### CODE PRINCIPALE
+def main():
     
-
-    #Similar customer files display
-    chk_voisins = st.checkbox("Show similar customer files ?")
-
-    if chk_voisins:
-        knn = load_knn(sample)
-        st.markdown("<u>List of the 10 files closest to this Customer :</u>", unsafe_allow_html=True)
-        st.dataframe(load_kmeans(sample, chk_id, knn))
-        st.markdown("<i>Target 1 = Customer with default</i>", unsafe_allow_html=True)
-    else:
-        st.markdown("<i>…</i>", unsafe_allow_html=True)
+    ### BAR MENU
+    client_choice = st.sidebar.selectbox(
+        'Veuillez choisir un client', sample.index.values)
         
-        
-    st.markdown('***')
-    st.markdown("Thanks for going through this Web App with me! I'd love feedback on this, so if you want to reach out you can find me on [twitter] (https://twitter.com/nalron_) or my [website](https://nalron.com/). *Code from [Github](https://github.com/nalron/project_credit_scoring_model)* ❤️")
+     ### CONTENU DU DASHBOARD
+    header = "<h1 align='center'>SCORING CREDIT</h1>"
+    st.write(header, unsafe_allow_html=True)
+    
+    # Probabilité remboursement et interprétation
+    prediction = load_predictions_API(sample, client_choice, model)
+    st.write("<B><h5>Probabilité de faillite du client {} est de : {:.0f} % </B></h5>".format(client_choice, round(float(prediction)*100, 2)), unsafe_allow_html=True)
+    st.write("<p>{}</p>".format(interpret_score(prediction)), unsafe_allow_html=True)
+    
+    
+    # Informations clients
+    client_info = data.loc[client_choice]
+    st.write("<h3><B>Informations principales du client :</B></h3>", unsafe_allow_html=True)
+    st.write(f"<b>- GENRE :</b> {client_info['CODE_GENDER']} ", unsafe_allow_html=True)
+    st.write(f"<b>- POSSEDE UNE VOITURE :</b> {client_info['FLAG_OWN_CAR']} ", unsafe_allow_html=True)
+    st.write(f"<b>- POSSEDE UN BIEN IMMOBILIER :</b> {client_info['FLAG_OWN_REALTY']} ", unsafe_allow_html=True)
+    st.write(f"<b>- AGE :</b> {int(client_info['DAYS_BIRTH']/365)} ans", unsafe_allow_html=True)
+    st.write(f"<b>- REVENU TOTAL :</b> {client_info['AMT_INCOME_TOTAL']} ", unsafe_allow_html=True)
+    st.write(f"<b>- SITUATION FAMILIAL :</b> {client_info['NAME_FAMILY_STATUS']} ", unsafe_allow_html=True)
+    st.write(f"<b>- NOMBRE ENFANTS :</b> {client_info['CNT_CHILDREN']} ", unsafe_allow_html=True)
+   
+    # Informations sur tous les clients
+    filtered_data = data.copy()  # Copie des données pour les filtrer
+    # Options de filtrage
+    filter_options = st.multiselect('Variables de filtrage', data.columns)
+    # Appliquer les filtres
+    for option in filter_options:
+        filter_value = st.selectbox(f"Valeur de {option}", data[option].unique())
+        filtered_data = filtered_data[filtered_data[option] == filter_value]
+    # Affichage des informations descriptives filtrées
+    st.subheader('Informations descriptives filtrées')
+    st.dataframe(filtered_data)
 
-
+    # Afficher les graphiques
+    #Age distribution plot
+    data_AMT_INCOME_TOTAL = data["AMT_INCOME_TOTAL"]
+    fig, ax = plt.subplots()
+    sns.histplot(data_AMT_INCOME_TOTAL, bins=100)
+    ax.axvline(client_info["AMT_INCOME_TOTAL"], color="green", linestyle='--')
+    ax.set(title='Revenu', xlabel='Revenu', ylabel='Nombre')
+    st.pyplot(fig)   
+    st.subheader('Comparaison de l\'indicateur')
+    indicator_choice = st.selectbox('Sélectionnez un indicateur', ['AMT_INCOME_TOTAL', 'DAYS_BIRTH', 'CNT_CHILDREN'])
+    plot_indicator_comparison(data, client_choice, indicator_choice)
+    
 if __name__ == '__main__':
     main()
