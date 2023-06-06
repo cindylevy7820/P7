@@ -108,8 +108,8 @@ def main():
     indicator_choice = st.selectbox('Sélectionnez un indicateur', ['AMT_INCOME_TOTAL', 'DAYS_BIRTH', 'CNT_CHILDREN'])
     plot_indicator_comparison(data, client_choice, indicator_choice)
     
-    # Analyse bi-dimmentionnel
-    # Graphique revenu en fonction du nombre d'enfants
+    # Analyse bi-dimmentionnel (Graphique revenu en fonction du nombre d'enfants)
+    st.subheader('Analyse bi-dimmentionnel')
     fig, ax = plt.subplots()
     sns.scatterplot(x=data["CNT_CHILDREN"], y=data["AMT_INCOME_TOTAL"])
     ax.set(title='Revenu en fonction du nombre d\'enfants', xlabel='Nombre d\'enfants', ylabel='Revenu')
