@@ -20,8 +20,10 @@ def predict():
     
     # Préparer la réponse
     response = {'predictions': predictions.tolist()}
-    st.write(jsonify(response))
+    
     return jsonify(response)
+
+st.write(predict())
 
 if __name__ == '__main__':
     app.run(port=5001)
