@@ -24,5 +24,5 @@ def predict():
     return jsonify(response)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(app.run(port=5001))
 
