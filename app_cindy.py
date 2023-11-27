@@ -83,6 +83,7 @@ def main():
     st.write(f"<b>- REVENU TOTAL :</b> {client_info['AMT_INCOME_TOTAL']} ", unsafe_allow_html=True)
     st.write(f"<b>- SITUATION FAMILIAL :</b> {client_info['NAME_FAMILY_STATUS']} ", unsafe_allow_html=True)
     st.write(f"<b>- NOMBRE ENFANTS :</b> {client_info['CNT_CHILDREN']} ", unsafe_allow_html=True)
+    st.write(f"<b>- POURCENTAGE MONTANT CREDIT (/revenu client) :</b> {client_info['CREDIT_INCOME_PERCENT']} ", unsafe_allow_html=True)
    
     # Informations sur tous les clients
     filtered_data = data.copy()  # Copie des données pour les filtrer
